@@ -1,0 +1,246 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/iron-ajax/iron-ajax.html">
+
+<dom-module id="gz-resources">
+  <template>
+    <style>
+
+    </style>
+
+    <iron-ajax
+      id="ajaxgetall"
+      method="GET"
+      url=[[url]]/groups
+      handle-as="json"
+      on-response="_getAllResponse"
+      on-error="_getAllError"
+      content-type="application/json"
+      debounce-duration="300"
+    ></iron-ajax>
+
+    <iron-ajax
+      id="ajaxcreate"
+      method="POST"
+      url=[[url]]/groups
+      handle-as="json"
+      on-response="_createResponse"
+      on-error="_createError"
+      content-type="application/json"
+      debounce-duration="300"
+    ></iron-ajax>
+
+    <iron-ajax
+      id="ajaxdelete"
+      method="DELETE"
+      url=[[url]]/groups
+      handle-as="json"
+      on-response="_deleteResponse"
+      on-error="_deleteError"
+      content-type="application/json"
+      debounce-duration="300"
+    ></iron-ajax>
+
+    <div id="config" hidden$="[[!config]]">
+
+      <div>
+        <input id=url value="{{url::input}}" placeholder="Cloudsim-auth server url"></input>
+      </div>
+      <div>
+        <input id=token value="{{token::input}}" placeholder="User token"></input>
+      </div>
+
+      <hr>
+
+      <h3>Get all groups for the user</h3>
+
+      <button on-tap="getAll" >Get all groups</button>
+
+      <template is="dom-repeat" items="[[groups]]">
+        <div>
+          <button on-tap="_tapDelete" id="[[item.name]]" alt="Delete group">X</button>
+          [[item.data.name]]
+        </div>
+      </template>
+
+      <hr>
+
+      <h3>Create group</h3>
+
+      <div>
+        <input id="createname" value="{{createname::input}}" placeholder="Group name"></input>
+      </div>
+
+      <button on-tap="create" >Create group</button>
+
+      <hr>
+
+    </div>
+
+  </template>
+
+  <script>
+
+
+  (function() {
+    'use strict';
+
+    Polymer({
+      is: 'gz-resources',
+      // Attached
+      attached: function() {
+        console.log('gz-resources widget attached!')
+      },
+
+      /// Get all groups for user
+      getAll: function(req) {
+        this.$.ajaxgetall.headers.authorization = this.token.trim()
+        this.$.ajaxgetall.generateRequest()
+      },
+
+      /// Callback when successfully retrieving all groups
+      _getAllResponse: function(req) {
+        const resp = this.$.ajaxgetall.lastResponse
+        if (!resp)
+          return;
+
+        if (!resp.success)
+        {
+          // ERROR
+          return;
+        }
+
+        this.groups = resp.result;
+
+        this.fire('groupsupdated', this.groups)
+      },
+
+      /// Callback when failed to retrieve all groups
+      _getAllError: function(err) {
+        // No need to log this all the time, not necessarily an error, just
+        // means user has no permissions
+        // Message often is at: err.detail.error.message
+        console.error(err)
+      },
+
+      /// Create a group
+      create: function(req) {
+        const data = { resource: this.createname.trim() };
+        this.$.ajaxcreate.headers.authorization = this.token.trim();
+        this.$.ajaxcreate.body = data;
+        this.$.ajaxcreate.generateRequest();
+      },
+
+      /// Callback when successfully creating group.
+      _createResponse: function(req) {
+        const resp = this.$.ajaxcreate.lastResponse
+        if (!resp)
+          return;
+
+        if (!resp.success)
+        {
+          // ERROR
+          return;
+        }
+
+        // resp:
+        // {
+        //   id : String
+        //   success : Boolean
+        //   result
+        //   {
+        //     data
+        //     {
+        //       name : String
+        //     }
+        //     permissions : Dictionary
+        //     [username: String]
+        //     {
+        //       readOnly : Boolean
+        //     }
+        //   }
+        // }
+        this.fire('created', resp)
+      },
+
+      /// Callback when failed to create group.
+      _createError: function(err) {
+        // No need to log this all the time, not necessarily an error, just
+        // means user has no permissions
+        // Message often is at: err.detail.error.message
+        console.error(err)
+      },
+
+      /// Tap group delete buttom on config
+      _tapDelete: function(req) {
+        this.deletename = req.target.id.trim();
+        this.delete();
+      },
+
+      /// Callback when successfully creating group.
+      delete: function(req) {
+        const data = { resource: this.deletename };
+        this.$.ajaxdelete.headers.authorization = this.token.trim();
+        this.$.ajaxdelete.body = data;
+        this.$.ajaxdelete.generateRequest();
+      },
+
+      /// Callback when successfully creating group.
+      _deleteResponse: function(req) {
+        const resp = this.$.ajaxdelete.lastResponse
+        if (!resp)
+          return;
+
+        if (!resp.success)
+        {
+          // ERROR
+          return;
+        }
+
+        // resp:
+        // {
+        //   success : Boolean
+        //   resource
+        //   {
+        //     name : String
+        //     data
+        //     {
+        //       name : String
+        //     }
+        //     permissions : Dictionary
+        //     [username: String]
+        //     {
+        //       readOnly : Boolean
+        //     }
+        //   }
+        // }
+        this.fire('deleted', resp)
+      },
+
+      /// Callback when failed to create group.
+      _createError: function(err) {
+        // No need to log this all the time, not necessarily an error, just
+        // means user has no permissions
+        // Message often is at: err.detail.error.message
+        console.error(err)
+      },
+
+      properties: {
+
+        // Server URL. This should point to a valid cloudsim-auth server
+        url: {
+          type: String,
+          value: '',
+          notify: true
+        },
+
+        /// Show or hide the configuration UI
+        config: {
+          type: Boolean,
+          value: false,
+          notify: true
+        },
+      }
+    });
+  })();
+  </script>
+</dom-module>
