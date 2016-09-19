@@ -10,7 +10,7 @@
     <iron-ajax
       id="ajaxgetall"
       method="GET"
-      url=[[url]]/groups
+      url=[[url]]/[[resourcename]]s
       handle-as="json"
       on-response="_getAllResponse"
       on-error="_getAllError"
@@ -21,7 +21,7 @@
     <iron-ajax
       id="ajaxcreate"
       method="POST"
-      url=[[url]]/groups
+      url=[[url]]/[[resourcename]]s
       handle-as="json"
       on-response="_createResponse"
       on-error="_createError"
@@ -32,7 +32,7 @@
     <iron-ajax
       id="ajaxdelete"
       method="DELETE"
-      url=[[url]]/groups
+      url=[[url]]/[[resourcename]]s
       handle-as="json"
       on-response="_deleteResponse"
       on-error="_deleteError"
@@ -51,26 +51,26 @@
 
       <hr>
 
-      <h3>Get all groups for the user</h3>
+      <h3>Get all [[resourcename]]s for the user</h3>
 
-      <button on-tap="getAll" >Get all groups</button>
+      <button on-tap="getAll" >Get all [[resourcename]]s</button>
 
-      <template is="dom-repeat" items="[[groups]]">
+      <template is="dom-repeat" items="[[resources]]">
         <div>
-          <button on-tap="_tapDelete" id="[[item.name]]" alt="Delete group">X</button>
+          <button on-tap="_tapDelete" id="[[item.name]]" alt="Delete [[resourcename]]">X</button>
           [[item.data.name]]
         </div>
       </template>
 
       <hr>
 
-      <h3>Create group</h3>
+      <h3>Create [[resourcename]]</h3>
 
       <div>
         <input id="createname" value="{{createname::input}}" placeholder="Group name"></input>
       </div>
 
-      <button on-tap="create" >Create group</button>
+      <button on-tap="create" >Create [[resourcename]]</button>
 
       <hr>
 
@@ -91,13 +91,13 @@
         console.log('gz-resources widget attached!')
       },
 
-      /// Get all groups for user
+      /// Get all resources for user
       getAll: function(req) {
         this.$.ajaxgetall.headers.authorization = this.token.trim()
         this.$.ajaxgetall.generateRequest()
       },
 
-      /// Callback when successfully retrieving all groups
+      /// Callback when successfully retrieving all resources
       _getAllResponse: function(req) {
         const resp = this.$.ajaxgetall.lastResponse
         if (!resp)
@@ -109,12 +109,12 @@
           return;
         }
 
-        this.groups = resp.result;
+        this.resources = resp.result;
 
-        this.fire('groupsupdated', this.groups)
+        this.fire('resourcesupdated', this.resources)
       },
 
-      /// Callback when failed to retrieve all groups
+      /// Callback when failed to retrieve all resources
       _getAllError: function(err) {
         // No need to log this all the time, not necessarily an error, just
         // means user has no permissions
@@ -122,7 +122,7 @@
         console.error(err)
       },
 
-      /// Create a group
+      /// Create a resource
       create: function(req) {
         const data = { resource: this.createname.trim() };
         this.$.ajaxcreate.headers.authorization = this.token.trim();
@@ -130,7 +130,7 @@
         this.$.ajaxcreate.generateRequest();
       },
 
-      /// Callback when successfully creating group.
+      /// Callback when successfully creating resource.
       _createResponse: function(req) {
         const resp = this.$.ajaxcreate.lastResponse
         if (!resp)
@@ -162,7 +162,7 @@
         this.fire('created', resp)
       },
 
-      /// Callback when failed to create group.
+      /// Callback when failed to create resource.
       _createError: function(err) {
         // No need to log this all the time, not necessarily an error, just
         // means user has no permissions
@@ -170,13 +170,13 @@
         console.error(err)
       },
 
-      /// Tap group delete buttom on config
+      /// Tap resource delete buttom on config
       _tapDelete: function(req) {
         this.deletename = req.target.id.trim();
         this.delete();
       },
 
-      /// Callback when successfully creating group.
+      /// Callback when successfully creating resource.
       delete: function(req) {
         const data = { resource: this.deletename };
         this.$.ajaxdelete.headers.authorization = this.token.trim();
@@ -184,7 +184,7 @@
         this.$.ajaxdelete.generateRequest();
       },
 
-      /// Callback when successfully creating group.
+      /// Callback when successfully creating resource.
       _deleteResponse: function(req) {
         const resp = this.$.ajaxdelete.lastResponse
         if (!resp)
@@ -216,7 +216,7 @@
         this.fire('deleted', resp)
       },
 
-      /// Callback when failed to create group.
+      /// Callback when failed to create resource.
       _createError: function(err) {
         // No need to log this all the time, not necessarily an error, just
         // means user has no permissions
