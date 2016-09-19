@@ -86,11 +86,15 @@
 
     Polymer({
       is: 'gz-resources',
-      // Attached
+
+      /// Callback when component is attached.
       attached: function() {
         console.log('gz-resources widget attached!')
       },
 
+      //////////////////////////////////////////////////
+      /// Get all
+      //////////////////////////////////////////////////
       /// Get all resources for user
       getAll: function(req) {
         this.$.ajaxgetall.headers.authorization = this.token.trim()
@@ -116,12 +120,12 @@
 
       /// Callback when failed to retrieve all resources
       _getAllError: function(err) {
-        // No need to log this all the time, not necessarily an error, just
-        // means user has no permissions
-        // Message often is at: err.detail.error.message
         console.error(err)
       },
 
+      //////////////////////////////////////////////////
+      /// Create resource
+      //////////////////////////////////////////////////
       /// Create a resource
       create: function(req) {
         const data = { resource: this.createname.trim() };
@@ -170,6 +174,9 @@
         console.error(err)
       },
 
+      //////////////////////////////////////////////////
+      /// Delete resource
+      //////////////////////////////////////////////////
       /// Tap resource delete buttom on config
       _tapDelete: function(req) {
         this.deletename = req.target.id.trim();
@@ -216,11 +223,8 @@
         this.fire('deleted', resp)
       },
 
-      /// Callback when failed to create resource.
-      _createError: function(err) {
-        // No need to log this all the time, not necessarily an error, just
-        // means user has no permissions
-        // Message often is at: err.detail.error.message
+      /// Callback when failed to delete resource.
+      _deleteError: function(err) {
         console.error(err)
       },
 

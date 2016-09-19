@@ -1,6 +1,16 @@
+[ ![Codeship Status for osrf/gz-resources](https://codeship.com/projects/21902870-60c1-0134-82e0-1e1ec2b80fe8/status?branch=master)](https://codeship.com/projects/174634)
+
+[![GitHub version](https://badge.fury.io/gh/osrf%2Fgz-resources.svg)](https://badge.fury.io/gh/osrf%2Fgz-resources)
+
+[![Dependency Status](https://www.versioneye.com/user/projects/57e0292c6dfcd00047c51ead/badge.svg?style=flat-square)](https://www.versioneye.com/user/projects/57e0292c6dfcd00047c51ead)
+
 # \<gz-resources\>
 
+* Create new resources
+* Delete resources
+* Get all resources of a kink
 
+For details, refer to the [Cloudsim wiki](https://bitbucket.org/osrf/cloudsim/wiki/Home)
 
 ## Install the Polymer-CLI
 
