@@ -145,9 +145,9 @@
         if (!resp)
           return;
 
-        if (!resp.success)
+        if (resp.success && resp.success == false)
         {
-          // ERROR
+          console.error("Failed to create resource.");
           return;
         }
 
@@ -183,13 +183,13 @@
       //////////////////////////////////////////////////
       /// Tap resource delete buttom on config
       _tapDelete: function(req) {
-        this.deletename = req.target.id.trim();
+        this.deleteid = req.target.id.trim();
         this.delete();
       },
 
       /// Callback when successfully creating resource.
       delete: function(req) {
-        const data = { resource: this.deletename };
+        const data = { resource: this.deleteid };
         this.$.ajaxdelete.headers.authorization = this.token.trim();
         this.$.ajaxdelete.body = data;
         this.$.ajaxdelete.generateRequest();
@@ -201,9 +201,9 @@
         if (!resp)
           return;
 
-        if (!resp.success)
+        if (resp.success && resp.success == false)
         {
-          // ERROR
+          console.error("Failed to delete resource.");
           return;
         }
 
