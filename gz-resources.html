@@ -67,10 +67,10 @@
       <h3>Create [[resourcename]]</h3>
 
       <div>
-        <input id="createname" value="{{createname::input}}" placeholder="Group name"></input>
+        <input id="datatxt" value="{{datatxt::input}}" placeholder="Data (json)"></input>
       </div>
 
-      <button on-tap="create" >Create [[resourcename]]</button>
+      <button on-tap="_tapCreate" >Create [[resourcename]]</button>
 
       <hr>
 
@@ -126,11 +126,16 @@
       //////////////////////////////////////////////////
       /// Create resource
       //////////////////////////////////////////////////
+      /// Tap resource delete buttom on config
+      _tapCreate: function(req) {
+        this.data = JSON.parse(this.datatxt);
+        this.create();
+      },
+
       /// Create a resource
       create: function(req) {
-        const data = { resource: this.createname.trim() };
         this.$.ajaxcreate.headers.authorization = this.token.trim();
-        this.$.ajaxcreate.body = data;
+        this.$.ajaxcreate.body = this.data;
         this.$.ajaxcreate.generateRequest();
       },
 
@@ -154,7 +159,6 @@
         //   {
         //     data
         //     {
-        //       name : String
         //     }
         //     permissions : Dictionary
         //     [username: String]
