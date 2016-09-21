@@ -6,6 +6,10 @@
 
 # \<gz-resources\>
 
+documentation: [https://osrf.github.io/gz-resources/components/gz-resources](https://osrf.github.io/gz-resources/components/gz-resources)
+
+demo: [https://osrf.github.io/gz-resources/components/gz-resources](https://osrf.github.io/gz-resources/components/gz-resources/demo)
+
 * Create new resources
 * Delete resources
 * Get all resources of a kink
