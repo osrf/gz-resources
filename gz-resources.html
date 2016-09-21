@@ -43,10 +43,13 @@
     <div id="config" hidden$="[[!config]]">
 
       <div>
-        <input id=url value="{{url::input}}" placeholder="Cloudsim-auth server url"></input>
+        <input value="{{url::input}}" placeholder="Cloudsim-auth server url"></input>
       </div>
       <div>
-        <input id=token value="{{token::input}}" placeholder="User token"></input>
+        <input value="{{token::input}}" placeholder="User token"></input>
+      </div>
+      <div>
+        <input value="{{resourcename::input}}" placeholder="Resource name"></input>
       </div>
 
       <hr>
@@ -245,6 +248,13 @@
         config: {
           type: Boolean,
           value: false,
+          notify: true
+        },
+
+        /// Data used to create / update a resource.
+        data: {
+          type: Object,
+          value: {},
           notify: true
         },
       }
