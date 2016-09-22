@@ -32,7 +32,7 @@
     <iron-ajax
       id="ajaxdelete"
       method="DELETE"
-      url=[[url]]/[[resourcename]]s
+      url=[[url]]/[[resourcename]]s/[[deleteid]]
       handle-as="json"
       on-response="_deleteResponse"
       on-error="_deleteError"
@@ -131,7 +131,13 @@
       //////////////////////////////////////////////////
       /// Tap resource delete buttom on config
       _tapCreate: function(req) {
-        this.data = JSON.parse(this.datatxt);
+        try {
+          this.data = JSON.parse(this.datatxt);
+        }
+        catch(e) {
+          console.error("Couldn't parse json: " + e);
+          return;
+        }
         this.create();
       },
 
@@ -192,9 +198,8 @@
 
       /// Callback when successfully creating resource.
       delete: function(req) {
-        const data = { resource: this.deleteid };
         this.$.ajaxdelete.headers.authorization = this.token.trim();
-        this.$.ajaxdelete.body = data;
+        this.$.ajaxdelete.body = {};
         this.$.ajaxdelete.generateRequest();
       },
 
