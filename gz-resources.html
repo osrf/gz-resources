@@ -54,7 +54,7 @@
 
       <hr>
 
-      <h3>Get all [[resourcename]]s for the user</h3>
+      <h3>Get all "[[resourcename]]"s for the user</h3>
 
       <button on-tap="getAll" >Get all [[resourcename]]s</button>
 
@@ -67,7 +67,7 @@
 
       <hr>
 
-      <h3>Create [[resourcename]]</h3>
+      <h3>Create "[[resourcename]]"</h3>
 
       <div>
         <input id="datatxt" value="{{datatxt::input}}" placeholder="Data (json)"></input>
@@ -81,6 +81,11 @@
 
   </template>
 
+  <!-- For optimal results, the version here should match the
+       socket.io version in cloudsim-grant
+  -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.4.8/socket.io.js"></script>
+
   <script>
 
 
@@ -92,21 +97,65 @@
 
       /// Callback when component is attached.
       attached: function() {
-        console.log('gz-resources widget attached!')
+        console.log('gz-resources widget attached (id = ' + this.id + ')')
+        this.socket = null
       },
 
-      //////////////////////////////////////////////////
+      /// Create a websocket connection to get feedback on resource changes
+      connect: function() {
+        if (this.socket) {
+          try {
+            this.socket.disconnect()
+          }
+          catch (err) {
+            console.error(err)
+          }
+        }
+        this.socket = io(this.url, {query: {token: this.token}})
+
+        // avoid 'this' being reassign inside callbacks
+        const socket = this.socket
+        const msg = this.id + ' <gz-resources>:'
+
+        socket.on('connect', _ => {
+          console.log( msg, 'socket connected')
+        })
+        socket.on('error', function (e) {
+          console.error(msg, error )
+        })
+        socket.on('disconnect', ()=>{
+          console.error(msg, 'socket disconnect')
+        })
+        socket.on('reconnect', (n)=>{
+          console.log(msg, 'socket reconnect','nb:', n)
+        })
+        socket.on('reconnect_attempt', ()=>{
+          console.log(msg, 'reconnect_attempt')
+        })
+        socket.on('reconnecting', (n)=>{
+          console.log(msg, 'socket reconnecting, nb:', n)
+        })
+        socket.on('reconnect_error',  function(err) {
+          console.error(msg, 'socket reconnect error ' + util.inspect(err))
+        })
+        client.on('resource', function(resource) {
+          this.fire('resource', res)
+        })
+      },
+
       /// Get all
-      //////////////////////////////////////////////////
       /// Get all resources for user
       getAll: function(req) {
         this.$.ajaxgetall.headers.authorization = this.token.trim()
         this.$.ajaxgetall.generateRequest()
+        console.log(this.$.ajaxgetall.method,this.$.ajaxgetall.url, 'request sent')
       },
+
 
       /// Callback when successfully retrieving all resources
       _getAllResponse: function(req) {
         const resp = this.$.ajaxgetall.lastResponse
+        console.log('_getAllResponse:', resp)
         if (!resp)
           return;
 
@@ -123,13 +172,11 @@
 
       /// Callback when failed to retrieve all resources
       _getAllError: function(err) {
-        console.error(err)
+        this._errorHelper(err, 'Failed to get ' + this.resourcename + 's')
       },
 
-      //////////////////////////////////////////////////
       /// Create resource
-      //////////////////////////////////////////////////
-      /// Tap resource delete buttom on config
+      /// Tap resource delete button on config
       _tapCreate: function(req) {
         try {
           this.data = JSON.parse(this.datatxt);
@@ -187,10 +234,8 @@
         console.error(err)
       },
 
-      //////////////////////////////////////////////////
       /// Delete resource
-      //////////////////////////////////////////////////
-      /// Tap resource delete buttom on config
+      /// Tap resource delete button on config
       _tapDelete: function(req) {
         this.deleteid = req.target.id.trim();
         this.delete();
@@ -240,19 +285,91 @@
         console.error(err)
       },
 
+      _errorHelper: function(err, msg) {
+        let ajax = err.target
+        if(!ajax) {
+          console.error("ajax expected")
+        }
+        else{
+          if(!ajax.lastError) {
+            console.log("no lastError!")
+          }
+          else {
+            if(!ajax.lastError.response) {
+              if (err.detail.error.message) {
+                msg += ": " + err.detail.error.message
+              }
+              else {
+                msg += ": no response"
+              }
+            }
+            else {
+              // if there was a response, look for an object
+              // with a message / error / msg attribute
+              const res = ajax.lastError.response
+              try {
+                const json = typeof (res) === "object"? res: JSON.parse(res)
+                if(json.error)
+                  msg += ": " + json.error
+                if(json.msg)
+                  msg += ": " + json.msg
+                if(json.message)
+                  msg += ": " + json.message
+              }
+              catch(err) {
+                // the error is not formatted as expected
+                // add the entire response
+                msg += ": " + res
+              }
+            }
+          }
+        }
+        console.error(msg)
+        this.fire('error', msg,  {bubbles: this.bubbles})
+      },
+
       properties: {
 
-        // Server URL. This should point to a valid cloudsim-auth server
+        /// Show or hide the configuration UI
+        config: {
+          type: Boolean,
+          value: false,
+          notify: true
+        },
+
+        /// When true, error events bubble upstream
+        bubbles: {
+          type: Boolean,
+          value: true
+        },
+
+        token: {
+          type: String,
+          value: '',
+          notify: true
+        },
+
+        /// Server URL. This should point to a valid resource server
         url: {
           type: String,
           value: '',
           notify: true
         },
 
-        /// Show or hide the configuration UI
-        config: {
-          type: Boolean,
-          value: false,
+
+        /// the type of resource. For example, if this value is 'thing'
+        /// then the resources will be fetched from /thing and /things
+        /// routes on the server
+        resourcename: {
+          type: String,
+          value: ''
+        },
+
+        /// The resources information are stored here. This is populated
+        /// by the _
+        resources: {
+          type: Array,
+          value: [],
           notify: true
         },
 
