@@ -162,7 +162,7 @@
           console.error(msg, 'socket reconnect error ' + util.inspect(err))
         })
         socket.on('resource', function(resource) {
-          this.fire('resource', res)
+          this.fire('resource', resource)
         })
         return this.socket
       },
