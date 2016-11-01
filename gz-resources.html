@@ -161,9 +161,10 @@
         socket.on('reconnect_error',  function(err) {
           console.error(msg, 'socket reconnect error ' + util.inspect(err))
         })
-        client.on('resource', function(resource) {
+        socket.on('resource', function(resource) {
           this.fire('resource', res)
         })
+        return this.socket
       },
 
       /// disconnect the websocket
