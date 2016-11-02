@@ -163,6 +163,7 @@
           console.error(msg, 'socket reconnect error ' + util.inspect(err))
         })
         socket.on('resource', function(resource) {
+          console.log(resource)
           that.fire('resource', resource)
         })
         return this.socket
@@ -229,7 +230,7 @@
 
       // response handler for resource creation
       _createResponse: function() {
-        const resp = this.$.ajaxCreate.lastResponse
+        const resp = this.$.ajaxcreate.lastResponse
         console.assert(resp)
         if (resp.hasOwnProperty('success') && resp.success == false) {
           const msg = 'Failed to create ' + this.resourcename
