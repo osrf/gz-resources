@@ -132,6 +132,7 @@
 
       /// Create a websocket connection to get feedback on resource changes
       connect: function() {
+        const that = this
         // make sure we're not over connecting
         this.disconnect()
         this.socket = io(this.url, {query: {token: this.token}})
@@ -162,7 +163,7 @@
           console.error(msg, 'socket reconnect error ' + util.inspect(err))
         })
         socket.on('resource', function(resource) {
-          this.fire('resource', resource)
+          that.fire('resource', resource)
         })
         return this.socket
       },
@@ -188,7 +189,7 @@
       },
 
       /// Callback when successfully retrieving all resources
-      _getAllResponse: function(req) {
+      _getAllResponse: function() {
         const resp = this.$.ajaxgetall.lastResponse
         console.log('_getAllResponse:', resp)
         if (!resp)
@@ -226,6 +227,23 @@
         this._tapCreate()
       },
 
+      // response handler for resource creation
+      _createResponse: function() {
+        const resp = this.$.ajaxCreate.lastResponse
+        console.assert(resp)
+        if (resp.hasOwnProperty('success') && resp.success == false) {
+          const msg = 'Failed to create ' + this.resourcename
+          console.error(msg)
+          this.fire('error', msg, {bubbles: this.bubbles})
+          return
+        }
+        this.fire('created', resp)
+      },
+
+      _createError: function(err) {
+        this._errorHelper(err, 'Error creating '+ this.resourcename )
+      },
+
       /// Update resource
       /// Tap resource delete button on config
       _tapUpdate: function() {
@@ -259,7 +277,7 @@
           const msg = 'Failed to update "' + this.resourceid + '"'
           console.error(msg)
           this.fire('error', msg, {bubbles: this.bubbles})
-          return;
+          return
         }
         this.fire('updated', resp)
       },
