@@ -160,7 +160,7 @@
           console.log(msg, 'socket reconnecting, nb:', n)
         })
         socket.on('reconnect_error',  function(err) {
-          console.error(msg, 'socket reconnect error ' + util.inspect(err))
+          console.error(msg, 'socket reconnect error ' JSON.stringify(err))
         })
         socket.on('resource', function(resource) {
           console.log(resource)
