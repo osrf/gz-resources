@@ -152,7 +152,7 @@
         const msg = this.id + ' <gz-resources>:'
 
         socket.on('connect', _ => {
-          this.log( msg, 'socket connected')
+          that.log( msg, 'socket connected')
         })
         socket.on('error', function (e) {
           console.error(msg, error )
@@ -161,19 +161,19 @@
           console.error(msg, 'socket disconnect')
         })
         socket.on('reconnect', (n)=>{
-          this.log(msg, 'socket reconnect','nb:', n)
+          that.log(msg, 'socket reconnect','nb:', n)
         })
         socket.on('reconnect_attempt', ()=>{
-          this.log(msg, 'reconnect_attempt')
+          that.log(msg, 'reconnect_attempt')
         })
         socket.on('reconnecting', (n)=>{
-          this.log(msg, 'socket reconnecting, nb:', n)
+          that.log(msg, 'socket reconnecting, nb:', n)
         })
         socket.on('reconnect_error',  function(err) {
           console.error(msg, 'socket reconnect error '+ JSON.stringify(err))
         })
         socket.on('resource', function(resource) {
-          this.log(resource)
+          that.log(resource)
           that.fire('resource', resource)
         })
         return this.socket
@@ -193,7 +193,7 @@
 
       /// Get all
       /// Get all resources for user
-      getAll: function(req) {
+      getAll: function() {
         this.$.ajaxgetall.headers.authorization = this.token.trim()
         this.$.ajaxgetall.generateRequest()
         this.log(this.$.ajaxgetall.method,this.$.ajaxgetall.url, 'request sent')
@@ -256,6 +256,23 @@
           this.fire('error', msg, {bubbles: this.bubbles})
           return
         }
+
+        // resp:
+        // {
+        //   id : String
+        //   success : Boolean
+        //   result
+        //   {
+        //     data
+        //     {
+        //     }
+        //     permissions : Dictionary
+        //     [username: String]
+        //     {
+        //       readOnly : Boolean
+        //     }
+        //   }
+        // }
         this.fire('created', resp)
       },
 
@@ -419,6 +436,7 @@
           value: true
         },
 
+        // Authentication token
         token: {
           type: String,
           value: '',
@@ -442,7 +460,7 @@
         },
 
         /// The resources information are stored here. This is populated
-        /// by the _
+        /// by the _getAll
         resources: {
           type: Array,
           value: [],
