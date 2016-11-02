@@ -89,6 +89,9 @@
       <div>
         <input id="resourceid" value="{{resourceid::input}}" placeholder="resource id"></input>
       </div>
+      <div>
+        <input id="datatxt" value="{{datatxt::input}}" placeholder="Data (json)"></input>
+      </div>
       <button on-tap="_tapUpdate" >Update [[resourcename]]</button>
 
       <hr>
@@ -160,7 +163,7 @@
           console.log(msg, 'socket reconnecting, nb:', n)
         })
         socket.on('reconnect_error',  function(err) {
-          console.error(msg, 'socket reconnect error ' JSON.stringify(err))
+          console.error(msg, 'socket reconnect error '+ JSON.stringify(err))
         })
         socket.on('resource', function(resource) {
           console.log(resource)
@@ -215,17 +218,23 @@
           this.fire('error', msg,  {bubbles: this.bubbles})
           return
         }
-        this.$.ajaxcreate.headers.authorization = this.token.trim()
-        this.$.ajaxcreate.body = this.data
-        this.$.ajaxcreate.generateRequest()
+        // now that data is set, perform the ajax operation
+        this._createRequest()
       },
 
       /// Create a resource from data
       create: function(data) {
         // set data
         this.data = data
-        // delegate to _tapCreate
-        this._tapCreate()
+        // delegate to _createRequest
+        this._createRequest()
+      },
+
+      /// implementation of the create
+      _createRequest: function() {
+        this.$.ajaxcreate.headers.authorization = this.token.trim()
+        this.$.ajaxcreate.body = this.data
+        this.$.ajaxcreate.generateRequest()
       },
 
       // response handler for resource creation
@@ -256,20 +265,26 @@
           this.fire('error', msg,  {bubbles: this.bubbles})
           return
         }
-        this.$.ajaxupdate.headers.authorization = this.token.trim()
-        this.$.ajaxupdate.body = this.data
-        this.$.ajaxupdate.generateRequest()
+        this._updateRequest()
       },
 
       /// Update a resource from data
       /// resource: the existing resource name to update
       /// data: the update information
       update: function (resource, data) {
-        this.data = data
         this.resourceid = resource
-        this._tapUpdate()
+        this.data = data
+        this._updateRequest()
       },
 
+      /// implementation of the update
+      _updateRequest: function() {
+        this.$.ajaxupdate.headers.authorization = this.token.trim()
+        this.$.ajaxupdate.body = this.data
+        this.$.ajaxupdate.generateRequest()
+      },
+
+      /// Callback from the update request
       _updateResponse: function () {
         const resp = this.$.ajaxUpdate.lastResponse
         console.assert(resp)
@@ -283,6 +298,7 @@
         this.fire('updated', resp)
       },
 
+      /// error callback for update request.
       _updateError: function (err) {
         this._errorHelper(err, 'Error updating "' + this.resourceid + '"' )
       },
