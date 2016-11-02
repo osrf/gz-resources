@@ -30,9 +30,20 @@
     ></iron-ajax>
 
     <iron-ajax
+      id="ajaxupdate"
+      method="PUT"
+      url=[[url]]/[[resourcename]]s/[[resourceid]]
+      handle-as="json"
+      on-response="_updateResponse"
+      on-error="_updateError"
+      content-type="application/json"
+      debounce-duration="300"
+    ></iron-ajax>
+
+    <iron-ajax
       id="ajaxdelete"
       method="DELETE"
-      url=[[url]]/[[resourcename]]s/[[deleteid]]
+      url=[[url]]/[[resourcename]]s/[[resourceid]]
       handle-as="json"
       on-response="_deleteResponse"
       on-error="_deleteError"
@@ -54,32 +65,53 @@
 
       <hr>
 
-      <h3>Get all [[resourcename]]s for the user</h3>
+      <h3>Get all "[[resourcename]]"s for the user</h3>
 
       <button on-tap="getAll" >Get all [[resourcename]]s</button>
 
       <template is="dom-repeat" items="[[resources]]">
         <div>
-          <button on-tap="_tapDelete" id="[[item.name]]" alt="Delete [[resourcename]]">X</button>
-          [[item.data.name]]
+          <pre>[[_j(item)]]</pre>
         </div>
       </template>
 
       <hr>
 
-      <h3>Create [[resourcename]]</h3>
-
+      <h3>Create "[[resourcename]]"</h3>
       <div>
         <input id="datatxt" value="{{datatxt::input}}" placeholder="Data (json)"></input>
       </div>
-
       <button on-tap="_tapCreate" >Create [[resourcename]]</button>
+
+      <hr>
+
+      <h3>Update "[[resourcename]]"</h3>
+      <div>
+        <input id="resourceid" value="{{resourceid::input}}" placeholder="resource id"></input>
+      </div>
+      <div>
+        <input id="datatxt" value="{{datatxt::input}}" placeholder="Data (json)"></input>
+      </div>
+      <button on-tap="_tapUpdate" >Update [[resourcename]]</button>
+
+      <hr>
+
+      <h3>Delete "[[resourcename]]"</h3>
+      <div>
+        <input id="resourceid" value="{{resourceid::input}}" placeholder="resource id"></input>
+      </div>
+      <button on-tap="_tapDelete" >Delete [[resourcename]]</button>
 
       <hr>
 
     </div>
 
   </template>
+
+  <!-- For optimal results, the version here should match the
+       socket.io version in cloudsim-grant
+  -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.4.8/socket.io.js"></script>
 
   <script>
 
@@ -92,72 +124,137 @@
 
       /// Callback when component is attached.
       attached: function() {
-        console.log('gz-resources widget attached!')
+        console.log('gz-resources widget attached (id = ' + this.id + ')')
+        this.socket = null
+        this.showLog = false
       },
 
-      //////////////////////////////////////////////////
+      /// function to format (stringify) resource data for display
+      _j: function(item) {
+        return JSON.stringify(item, null, 2)
+      },
+
+      log: function() {
+        if (this.showLog) {
+          console.log.apply(null, arguments)
+        }
+      },
+
+      /// Create a websocket connection to get feedback on resource changes
+      connect: function() {
+        const that = this
+        // make sure we're not over connecting
+        this.disconnect()
+        this.socket = io(this.url, {query: {token: this.token}})
+
+        // avoid 'this' being reassign inside callbacks
+        const socket = this.socket
+        const msg = this.id + ' <gz-resources>:'
+
+        socket.on('connect', _ => {
+          that.log( msg, 'socket connected')
+        })
+        socket.on('error', function (e) {
+          console.error(msg, error )
+        })
+        socket.on('disconnect', ()=>{
+          console.error(msg, 'socket disconnect')
+        })
+        socket.on('reconnect', (n)=>{
+          that.log(msg, 'socket reconnect','nb:', n)
+        })
+        socket.on('reconnect_attempt', ()=>{
+          that.log(msg, 'reconnect_attempt')
+        })
+        socket.on('reconnecting', (n)=>{
+          that.log(msg, 'socket reconnecting, nb:', n)
+        })
+        socket.on('reconnect_error',  function(err) {
+          console.error(msg, 'socket reconnect error '+ JSON.stringify(err))
+        })
+        socket.on('resource', function(resource) {
+          that.log(resource)
+          that.fire('resource', resource)
+        })
+        return this.socket
+      },
+
+      /// disconnect the websocket
+      disconnect: function() {
+        if (this.socket) {
+          try {
+            this.socket.disconnect()
+          }
+          catch (err) {
+            console.error('<gz-resources> disconnect', err)
+          }
+        }
+      },
+
       /// Get all
-      //////////////////////////////////////////////////
       /// Get all resources for user
-      getAll: function(req) {
+      getAll: function() {
         this.$.ajaxgetall.headers.authorization = this.token.trim()
         this.$.ajaxgetall.generateRequest()
+        this.log(this.$.ajaxgetall.method,this.$.ajaxgetall.url, 'request sent')
       },
 
       /// Callback when successfully retrieving all resources
-      _getAllResponse: function(req) {
+      _getAllResponse: function() {
         const resp = this.$.ajaxgetall.lastResponse
-        if (!resp)
-          return;
-
-        if (!resp.success)
-        {
-          // ERROR
-          return;
+        this.log('_getAllResponse:', resp)
+        if (!resp) {
+          console.error('_getAllResponse: no response')
+          return
         }
-
-        this.resources = resp.result;
-
+        this.resources = resp.result
         this.fire('resourcesupdated', this.resources)
       },
 
       /// Callback when failed to retrieve all resources
       _getAllError: function(err) {
-        console.error(err)
+        this._errorHelper(err, 'Failed to get ' + this.resourcename + 's')
       },
 
-      //////////////////////////////////////////////////
       /// Create resource
-      //////////////////////////////////////////////////
-      /// Tap resource delete buttom on config
-      _tapCreate: function(req) {
+      /// Tap resource delete button on config
+      _tapCreate: function() {
         try {
-          this.data = JSON.parse(this.datatxt);
+          this.data = JSON.parse(this.datatxt)
         }
         catch(e) {
-          console.error("Couldn't parse json: " + e);
-          return;
+          const msg = "Create resource error: Couldn't parse json: " + e
+          this.fire('error', msg,  {bubbles: this.bubbles})
+          return
         }
-        this.create();
+        // now that data is set, perform the ajax operation
+        this._createRequest()
       },
 
-      /// Create a resource
-      create: function(req) {
-        this.$.ajaxcreate.headers.authorization = this.token.trim();
-        this.$.ajaxcreate.body = this.data;
-        this.$.ajaxcreate.generateRequest();
+      /// Create a resource from data
+      create: function(data) {
+        // set data
+        this.data = data
+        // delegate to _createRequest
+        this._createRequest()
       },
 
-      /// Callback when successfully creating resource.
-      _createResponse: function(req) {
+      /// implementation of the create
+      _createRequest: function() {
+        this.$.ajaxcreate.headers.authorization = this.token.trim()
+        this.$.ajaxcreate.body = this.data
+        this.$.ajaxcreate.generateRequest()
+      },
+
+      // response handler for resource creation
+      _createResponse: function() {
         const resp = this.$.ajaxcreate.lastResponse
-        if (!resp)
-          return;
-
-        if (resp.success && resp.success == false)
-        {
-          console.error("Failed to create resource.");
-          return;
+        console.assert(resp)
+        if (resp.hasOwnProperty('success') && resp.success == false) {
+          const msg = 'Failed to create ' + this.resourcename
+          console.error(msg)
+          this.fire('error', msg, {bubbles: this.bubbles})
+          return
         }
 
         // resp:
@@ -179,39 +276,80 @@
         this.fire('created', resp)
       },
 
-      /// Callback when failed to create resource.
       _createError: function(err) {
-        // No need to log this all the time, not necessarily an error, just
-        // means user has no permissions
-        // Message often is at: err.detail.error.message
-        console.error(err)
+        this._errorHelper(err, 'Error creating '+ this.resourcename )
       },
 
-      //////////////////////////////////////////////////
-      /// Delete resource
-      //////////////////////////////////////////////////
-      /// Tap resource delete buttom on config
-      _tapDelete: function(req) {
-        this.deleteid = req.target.id.trim();
-        this.delete();
+      /// Update resource
+      /// Tap resource delete button on config
+      _tapUpdate: function() {
+        try {
+          this.data = JSON.parse(this.datatxt)
+        }
+        catch(e) {
+          const msg = "Update resource error: Couldn't parse json: " + e
+          this.fire('error', msg,  {bubbles: this.bubbles})
+          return
+        }
+        this._updateRequest()
       },
 
-      /// Callback when successfully creating resource.
-      delete: function(req) {
-        this.$.ajaxdelete.headers.authorization = this.token.trim();
-        this.$.ajaxdelete.body = {};
-        this.$.ajaxdelete.generateRequest();
+      /// Update a resource from data
+      /// resource: the existing resource name to update
+      /// data: the update information
+      update: function (resource, data) {
+        this.resourceid = resource
+        this.data = data
+        this._updateRequest()
       },
 
-      /// Callback when successfully creating resource.
-      _deleteResponse: function(req) {
-        const resp = this.$.ajaxdelete.lastResponse
-        if (!resp)
-          return;
+      /// implementation of the update
+      _updateRequest: function() {
+        this.$.ajaxupdate.headers.authorization = this.token.trim()
+        this.$.ajaxupdate.body = this.data
+        this.$.ajaxupdate.generateRequest()
+      },
 
-        if (resp.success && resp.success == false)
+      /// Callback from the update request
+      _updateResponse: function () {
+        const resp = this.$.ajaxUpdate.lastResponse
+        console.assert(resp)
+        if (resp.hasOwnProperty('success') && resp.success == false)
         {
-          console.error("Failed to delete resource.");
+          const msg = 'Failed to update "' + this.resourceid + '"'
+          console.error(msg)
+          this.fire('error', msg, {bubbles: this.bubbles})
+          return
+        }
+        this.fire('updated', resp)
+      },
+
+      /// error callback for update request.
+      _updateError: function (err) {
+        this._errorHelper(err, 'Error updating "' + this.resourceid + '"' )
+      },
+
+      /// Delete a resource. The resourceid
+      /// This function cannot be called 'delete'
+      del: function (resourceid) {
+        this.resourceid = resourceid
+        this._tapDelete()
+      },
+
+      _tapDelete: function () {
+        this.$.ajaxdelete.headers.authorization = this.token.trim()
+        this.$.ajaxdelete.body = {}
+        this.$.ajaxdelete.generateRequest()
+      },
+
+      /// Callback when successfully creating resource.
+      _deleteResponse: function() {
+        const resp = this.$.ajaxdelete.lastResponse
+        console.assert(resp)
+        if (resp.hasOwnProperty('success') && resp.success == false)
+        {
+          const msg =  'Failed to delete "' + this.resourceid + '"'
+          this.fire('error', msg, {bubbles: this.bubbles})
           return;
         }
 
@@ -237,22 +375,95 @@
 
       /// Callback when failed to delete resource.
       _deleteError: function(err) {
-        console.error(err)
+        this._errorHelper(err, 'Error deleting "' + this.resourceid + '"' )
+      },
+
+      _errorHelper: function(err, msg) {
+        let ajax = err.target
+        if(!ajax) {
+          console.error("ajax expected")
+        }
+        else{
+          if(!ajax.lastError) {
+            this.log("no lastError!")
+          }
+          else {
+            if(!ajax.lastError.response) {
+              if (err.detail.error.message) {
+                msg += ": " + err.detail.error.message
+              }
+              else {
+                msg += ": no response"
+              }
+            }
+            else {
+              // if there was a response, look for an object
+              // with a message / error / msg attribute
+              const res = ajax.lastError.response
+              try {
+                const json = typeof (res) === "object"? res: JSON.parse(res)
+                if(json.error)
+                  msg += ": " + json.error
+                if(json.msg)
+                  msg += ": " + json.msg
+                if(json.message)
+                  msg += ": " + json.message
+              }
+              catch(err) {
+                // the error is not formatted as expected
+                // add the entire response
+                msg += ": " + res
+              }
+            }
+          }
+        }
+        console.error(msg)
+        this.fire('error', msg,  {bubbles: this.bubbles})
       },
 
       properties: {
 
-        // Server URL. This should point to a valid cloudsim-auth server
+        /// Show or hide the configuration UI
+        config: {
+          type: Boolean,
+          value: false,
+          notify: true
+        },
+
+        /// When true, error events bubble upstream
+        bubbles: {
+          type: Boolean,
+          value: true
+        },
+
+        // Authentication token
+        token: {
+          type: String,
+          value: '',
+          notify: true
+        },
+
+        /// Server URL. This should point to a valid resource server
         url: {
           type: String,
           value: '',
           notify: true
         },
 
-        /// Show or hide the configuration UI
-        config: {
-          type: Boolean,
-          value: false,
+
+        /// the type of resource. For example, if this value is 'thing'
+        /// then the resources will be fetched from /thing and /things
+        /// routes on the server
+        resourcename: {
+          type: String,
+          value: ''
+        },
+
+        /// The resources information are stored here. This is populated
+        /// by the _getAll
+        resources: {
+          type: Array,
+          value: [],
           notify: true
         },
 
@@ -267,3 +478,4 @@
   })();
   </script>
 </dom-module>
+
