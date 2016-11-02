@@ -126,11 +126,18 @@
       attached: function() {
         console.log('gz-resources widget attached (id = ' + this.id + ')')
         this.socket = null
+        this.showLog = false
       },
 
       /// function to format (stringify) resource data for display
       _j: function(item) {
         return JSON.stringify(item, null, 2)
+      },
+
+      log: function() {
+        if (this.showLog) {
+          console.log.apply(null, arguments)
+        }
       },
 
       /// Create a websocket connection to get feedback on resource changes
@@ -145,7 +152,7 @@
         const msg = this.id + ' <gz-resources>:'
 
         socket.on('connect', _ => {
-          console.log( msg, 'socket connected')
+          this.log( msg, 'socket connected')
         })
         socket.on('error', function (e) {
           console.error(msg, error )
@@ -154,19 +161,19 @@
           console.error(msg, 'socket disconnect')
         })
         socket.on('reconnect', (n)=>{
-          console.log(msg, 'socket reconnect','nb:', n)
+          this.log(msg, 'socket reconnect','nb:', n)
         })
         socket.on('reconnect_attempt', ()=>{
-          console.log(msg, 'reconnect_attempt')
+          this.log(msg, 'reconnect_attempt')
         })
         socket.on('reconnecting', (n)=>{
-          console.log(msg, 'socket reconnecting, nb:', n)
+          this.log(msg, 'socket reconnecting, nb:', n)
         })
         socket.on('reconnect_error',  function(err) {
           console.error(msg, 'socket reconnect error '+ JSON.stringify(err))
         })
         socket.on('resource', function(resource) {
-          console.log(resource)
+          this.log(resource)
           that.fire('resource', resource)
         })
         return this.socket
@@ -189,15 +196,17 @@
       getAll: function(req) {
         this.$.ajaxgetall.headers.authorization = this.token.trim()
         this.$.ajaxgetall.generateRequest()
-        console.log(this.$.ajaxgetall.method,this.$.ajaxgetall.url, 'request sent')
+        this.log(this.$.ajaxgetall.method,this.$.ajaxgetall.url, 'request sent')
       },
 
       /// Callback when successfully retrieving all resources
       _getAllResponse: function() {
         const resp = this.$.ajaxgetall.lastResponse
-        console.log('_getAllResponse:', resp)
-        if (!resp)
-          return;
+        this.log('_getAllResponse:', resp)
+        if (!resp) {
+          console.error('_getAllResponse: no response')
+          return
+        }
         this.resources = resp.result
         this.fire('resourcesupdated', this.resources)
       },
@@ -359,7 +368,7 @@
         }
         else{
           if(!ajax.lastError) {
-            console.log("no lastError!")
+            this.log("no lastError!")
           }
           else {
             if(!ajax.lastError.response) {
