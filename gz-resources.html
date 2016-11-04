@@ -155,10 +155,11 @@
           that.log( msg, 'socket connected')
         })
         socket.on('error', function (e) {
-          console.error(msg, error )
+          console.error(msg, error)
         })
         socket.on('disconnect', ()=>{
-          console.error(msg, 'socket disconnect')
+          // Avoid spamming
+          // console.log(msg, 'socket disconnect')
         })
         socket.on('reconnect', (n)=>{
           that.log(msg, 'socket reconnect','nb:', n)
@@ -253,6 +254,19 @@
         if (resp.hasOwnProperty('success') && resp.success == false) {
           const msg = 'Failed to create ' + this.resourcename
           console.error(msg)
+          this.fire('error', msg, {bubbles: this.bubbles})
+          return
+        }
+
+        // POST <portal>/simulators gives this error:
+        if (resp.hasOwnProperty('error')) {
+          let msg = 'Failed to create ' + this.resourcename
+
+          if (resp.error.hasOwnProperty('msg'))
+            msg += ": " + resp.error.msg
+
+          console.error(msg)
+
           this.fire('error', msg, {bubbles: this.bubbles})
           return
         }
