@@ -326,7 +326,7 @@
 
       /// Callback from the update request
       _updateResponse: function () {
-        const resp = this.$.ajaxUpdate.lastResponse
+        const resp = this.$.ajaxupdate.lastResponse
         console.assert(resp)
         if (resp.hasOwnProperty('success') && resp.success == false)
         {
