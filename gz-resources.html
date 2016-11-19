@@ -201,8 +201,13 @@
       },
 
       /// Callback when successfully retrieving all resources
-      _getAllResponse: function() {
-        const resp = this.$.ajaxgetall.lastResponse
+      _getAllResponse: function(req) {
+        let resp
+        if (req && req.detail && req.detail.response)
+          resp = req.detail.response
+        else
+          resp = this.$.ajaxgetall.lastResponse
+
         this.log('_getAllResponse:', resp)
         if (!resp) {
           console.error('_getAllResponse: no response')
@@ -248,9 +253,19 @@
       },
 
       // response handler for resource creation
-      _createResponse: function() {
-        const resp = this.$.ajaxcreate.lastResponse
+      _createResponse: function(req) {
+        let resp
+        if (req && req.detail && req.detail.response)
+          resp = req.detail.response
+        else
+          resp = this.$.ajaxcreate.lastResponse
         console.assert(resp)
+
+        this.log('_createResponse:', resp)
+        if (!resp) {
+          console.error('_createResponse: no response')
+          return
+        }
         if (resp.hasOwnProperty('success') && resp.success == false) {
           const msg = 'Failed to create ' + this.resourcename
           console.error(msg)
@@ -325,9 +340,18 @@
       },
 
       /// Callback from the update request
-      _updateResponse: function () {
-        const resp = this.$.ajaxupdate.lastResponse
-        console.assert(resp)
+      _updateResponse: function (req) {
+        let resp
+        if (req && req.detail && req.detail.response)
+          resp = req.detail.response
+        else
+          resp = this.$.ajaxupdate.lastResponse
+
+        this.log('_updateResponse:', resp)
+        if (!resp) {
+          console.error('_updateResponse: no response')
+          return
+        }
         if (resp.hasOwnProperty('success') && resp.success == false)
         {
           const msg = 'Failed to update "' + this.resourceid + '"'
@@ -357,9 +381,18 @@
       },
 
       /// Callback when successfully creating resource.
-      _deleteResponse: function() {
-        const resp = this.$.ajaxdelete.lastResponse
-        console.assert(resp)
+      _deleteResponse: function(req) {
+        let resp
+        if (req && req.detail && req.detail.response)
+          resp = req.detail.response
+        else
+          resp = this.$.ajaxdelete.lastResponse
+
+        this.log('_deleteResponse:', resp)
+        if (!resp) {
+          console.error('_deleteResponse: no response')
+          return
+        }
         if (resp.hasOwnProperty('success') && resp.success == false)
         {
           const msg =  'Failed to delete "' + this.resourceid + '"'
