@@ -155,7 +155,7 @@
           that.log( msg, 'socket connected')
         })
         socket.on('error', function (e) {
-          console.error(msg, error)
+          console.error(msg, e)
         })
         socket.on('disconnect', ()=>{
           // Avoid spamming
@@ -278,6 +278,10 @@
 
           if (resp.error.hasOwnProperty('msg'))
             msg += ": " + resp.error.msg
+          else if (resp.error.hasOwnProperty('message'))
+            msg += ": " + resp.error.message
+          else
+            msg += ": " + resp.error
 
           console.error(msg)
 
