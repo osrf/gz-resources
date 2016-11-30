@@ -154,8 +154,8 @@
         socket.on('connect', _ => {
           that.log( msg, 'socket connected')
         })
-        socket.on('error', function (e) {
-          console.error(msg, e)
+        socket.on('error', function (error) {
+          console.error(msg, error)
         })
         socket.on('disconnect', ()=>{
           // Avoid spamming
