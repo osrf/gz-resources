@@ -1,0 +1,25 @@
+{
+  "name": "gz-resources",
+  "main": "gz-resources.html",
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.4.0",
+    "iron-ajax": "^1.4.3"
+  },
+  "devDependencies": {
+    "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.0.0",
+    "web-component-tester": "^4.0.0",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0"
+  },
+  "homepage": "https://github.com/osrf/gz-resources",
+  "_release": "dd9fa7d7bf",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "dd9fa7d7bf8dfe858505af4792c5ef685f0ebbeb"
+  },
+  "_source": "git://github.com/osrf/gz-resources.git",
+  "_target": "master",
+  "_originalSource": "osrf/gz-resources",
+  "_direct": true
+}
