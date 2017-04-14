@@ -452,8 +452,12 @@
               const res = ajax.lastError.response
               try {
                 const json = typeof (res) === "object"? res: JSON.parse(res)
-                if(json.error)
-                  msg += ": " + json.error
+                if(json.error) {
+                  if (json.error.msg)
+                    msg += ": " + json.error.msg
+                  else
+                    msg += ": " + json.error
+                }
                 if(json.msg)
                   msg += ": " + json.msg
                 if(json.message)
